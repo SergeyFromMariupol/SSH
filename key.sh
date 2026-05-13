@@ -38,16 +38,15 @@ log() {
 
 print_header() {
     echo ""
-    echo -e "${CYAN}╔════════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${CYAN}║${NC} ${GREEN}$1${NC}"
-    echo -e "${CYAN}╚════════════════════════════════════════════════════════════════╝${NC}"
+    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
+    echo -e "${GREEN}$1${NC}"
+    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
 }
 
-print_success() { echo -e "${GREEN}  ✓ $1${NC}"; log "OK: $1"; }
-print_error() { echo -e "${RED}  ✗ $1${NC}"; log "ERROR: $1"; }
-print_warning() { echo -e "${YELLOW}  ⚠ $1${NC}"; log "WARN: $1"; }
-print_info() { echo -e "${BLUE}  ℹ $1${NC}"; }
-print_highlight() { echo -e "${WHITE}  ▶ $1${NC}"; }
+print_success() { echo -e "${GREEN}✅ $1${NC}"; log "OK: $1"; }
+print_error() { echo -e "${RED}❌ $1${NC}"; log "ERROR: $1"; }
+print_warning() { echo -e "${YELLOW}⚠️ $1${NC}"; log "WARN: $1"; }
+print_info() { echo -e "${BLUE}ℹ️ $1${NC}"; }
 
 # Проверка root
 check_root() {
@@ -83,11 +82,7 @@ set_ssh_param() {
 
 # Проверка конфигурации SSH
 test_ssh_config() {
-    if sshd -t 2>/dev/null; then
-        return 0
-    else
-        return 1
-    fi
+    sshd -t 2>/dev/null
 }
 
 # Перезапуск SSH
@@ -100,7 +95,8 @@ restart_ssh() {
 configure_ufw() {
     local port=$1
     if command -v ufw &> /dev/null; then
-        ufw allow "$port"/tcp 2>/dev/null && print_success "Порт $port открыт в UFW"
+        ufw allow "$port"/tcp 2>/dev/null
+        print_success "Порт $port открыт в UFW"
         return 0
     else
         print_warning "UFW не установлен. Установите: apt install ufw -y"
@@ -115,39 +111,38 @@ configure_ufw() {
 show_main_menu() {
     clear
     echo -e "${PURPLE}"
-    echo "╔══════════════════════════════════════════════════════════════════════════╗"
-    echo "║                         SSH HARDENING SCRIPT v$VERSION                      ║"
-    echo "║                      Professional Security Configuration                   ║"
-    echo "╚══════════════════════════════════════════════════════════════════════════╝"
+    echo "════════════════════════════════════════════════════════════"
+    echo "     SSH HARDENING SCRIPT v$VERSION - Professional Edition"
+    echo "════════════════════════════════════════════════════════════"
     echo -e "${NC}"
     
-    # Показываем текущий статус
     local current_port=$(grep -E "^Port" "$CONFIG_FILE" | awk '{print $2}')
     [ -z "$current_port" ] && current_port=22
     
     local password_auth=$(grep -E "^PasswordAuthentication" "$CONFIG_FILE" | awk '{print $2}')
-    [ -z "$password_auth" ] && password_auth="yes (default)"
+    [ -z "$password_auth" ] && password_auth="yes"
     
     echo -e "${CYAN}📊 ТЕКУЩЕЕ СОСТОЯНИЕ:${NC}"
-    echo -e "  ${WHITE}SSH порт:${NC} $current_port"
-    echo -e "  ${WHITE}Парольная аутентификация:${NC} $password_auth"
-    echo -e "  ${WHITE}IP адрес:${NC} $(hostname -I | awk '{print $1}')"
-    echo -e "  ${WHITE}Хост:${NC} $(hostname)"
+    echo "  SSH порт: $current_port"
+    echo "  Парольная аутентификация: $password_auth"
+    echo "  IP адрес: $(hostname -I | awk '{print $1}')"
+    echo "  Хост: $(hostname)"
     echo ""
     
-    echo -e "${CYAN}⚙️  ДОСТУПНЫЕ ДЕЙСТВИЯ:${NC}"
+    echo -e "${CYAN}⚙️ ДОСТУПНЫЕ ДЕЙСТВИЯ:${NC}"
     echo ""
-    echo -e "  ${GREEN}1)${NC} 🔑 Управление SSH ключами"
-    echo -e "  ${GREEN}2)${NC} 🔒 Настройка безопасности (отключение паролей, ограничения)"
-    echo -e "  ${GREEN}3)${NC} 🌐 Смена SSH порта"
-    echo -e "  ${GREEN}4)${NC} 🚀 ПОЛНАЯ НАСТРОЙКА (всё сразу)"
-    echo -e "  ${GREEN}5)${NC} 🔄 Восстановление из бэкапа"
-    echo -e "  ${GREEN}6)${NC} 📋 Показать текущую конфигурацию"
-    echo -e "  ${GREEN}7)${NC} 🛡️  Дополнительные настройки (Fail2ban, баннеры)"
-    echo -e "  ${GREEN}8)${NC} ❌ Выход"
+    echo "  1) 🔑 Управление SSH ключами"
+    echo "  2) 🔒 Настройка безопасности"
+    echo "  3) 🌐 Смена SSH порта"
+    echo "  4) 🚀 ПОЛНАЯ НАСТРОЙКА (всё сразу)"
+    echo "  5) 🔄 Восстановление из бэкапа"
+    echo "  6) 📋 Показать текущую конфигурацию"
+    echo "  7) 🛡️ Дополнительные настройки"
+    echo "  8) ❌ Выход"
     echo ""
-    echo -e "${CYAN}════════════════════════════════════════════════════════════════${NC}"
-    read -p "$(echo -e ${YELLOW}👉 Введите номер действия [1-8]:${NC} )" ACTION
+    echo -e "${CYAN}════════════════════════════════════════════════════════════${NC}"
+    echo -n -e "${YELLOW}👉 Введите номер действия [1-8]: ${NC}"
+    read ACTION
     echo ""
     
     case $ACTION in
@@ -171,13 +166,14 @@ manage_keys() {
     print_header "УПРАВЛЕНИЕ SSH КЛЮЧАМИ"
     
     echo ""
-    echo -e "  ${GREEN}a)${NC} Добавить ключи с GitHub (@mrpltrans)"
-    echo -e "  ${GREEN}b)${NC} Добавить ключ вручную (вставить публичный ключ)"
-    echo -e "  ${GREEN}c)${NC} Показать установленные ключи"
-    echo -e "  ${GREEN}d)${NC} Удалить все ключи (ОСТОРОЖНО!)"
-    echo -e "  ${GREEN}e)${NC} Назад в главное меню"
+    echo "  a) Добавить ключи с GitHub (@mrpltrans)"
+    echo "  b) Добавить ключ вручную"
+    echo "  c) Показать установленные ключи"
+    echo "  d) Удалить все ключи"
+    echo "  e) Назад"
     echo ""
-    read -p "$(echo -e ${YELLOW}👉 Выберите действие [a-e]:${NC} )" KEY_ACTION
+    echo -n -e "${YELLOW}👉 Выберите действие [a-e]: ${NC}"
+    read KEY_ACTION
     
     case $KEY_ACTION in
         a)
@@ -186,7 +182,7 @@ manage_keys() {
             if curl -s https://github.com/mrpltrans.keys > /root/.ssh/authorized_keys; then
                 chmod 700 /root/.ssh
                 chmod 600 /root/.ssh/authorized_keys
-                print_success "Ключи успешно добавлены"
+                print_success "Ключи успешно загружены"
                 echo ""
                 print_info "Добавленные ключи:"
                 cat /root/.ssh/authorized_keys
@@ -196,7 +192,8 @@ manage_keys() {
             ;;
         b)
             print_info "Введите публичный SSH ключ:"
-            read -p "> " USER_KEY
+            echo -n "> "
+            read USER_KEY
             mkdir -p /root/.ssh
             echo "$USER_KEY" >> /root/.ssh/authorized_keys
             chmod 700 /root/.ssh
@@ -213,7 +210,8 @@ manage_keys() {
             ;;
         d)
             echo ""
-            read -p "$(echo -e ${RED}⚠️  ВНИМАНИЕ! Удалить все ключи? (yes/no):${NC} )" CONFIRM
+            echo -n -e "${RED}⚠️ ВНИМАНИЕ! Удалить все ключи? (yes/no): ${NC}"
+            read CONFIRM
             if [ "$CONFIRM" = "yes" ]; then
                 rm -f /root/.ssh/authorized_keys
                 print_success "Все ключи удалены"
@@ -224,7 +222,8 @@ manage_keys() {
     esac
     
     echo ""
-    read -p "Нажмите Enter для продолжения..."
+    echo -n "Нажмите Enter для продолжения..."
+    read
     show_main_menu
 }
 
@@ -241,15 +240,16 @@ security_settings() {
     echo ""
     echo -e "${CYAN}Выберите настройки для применения:${NC}"
     echo ""
-    echo -e "  ${GREEN}1)${NC} Отключить вход по паролю (рекомендуется)"
-    echo -e "  ${GREEN}2)${NC} Отключить вход для root по паролю"
-    echo -e "  ${GREEN}3)${NC} Ограничить количество попыток (MaxAuthTries)"
-    echo -e "  ${GREEN}4)${NC} Ограничить количество сессий (MaxSessions)"
-    echo -e "  ${GREEN}5)${NC} Настроить таймауты (ClientAliveInterval)"
-    echo -e "  ${GREEN}6)${NC} Применить ВСЕ настройки безопасности"
-    echo -e "  ${GREEN}7)${NC} Назад"
+    echo "  1) Отключить вход по паролю (рекомендуется)"
+    echo "  2) Отключить вход для root по паролю"
+    echo "  3) Ограничить количество попыток (MaxAuthTries)"
+    echo "  4) Ограничить количество сессий (MaxSessions)"
+    echo "  5) Настроить таймауты (ClientAliveInterval)"
+    echo "  6) Применить ВСЕ настройки безопасности"
+    echo "  7) Назад"
     echo ""
-    read -p "$(echo -e ${YELLOW}👉 Выберите действие [1-7]:${NC} )" SEC_ACTION
+    echo -n -e "${YELLOW}👉 Выберите действие [1-7]: ${NC}"
+    read SEC_ACTION
     
     case $SEC_ACTION in
         1)
@@ -263,19 +263,22 @@ security_settings() {
             restart_ssh
             ;;
         3)
-            read -p "Максимум попыток (рекомендуется 3-6): " MAX_TRIES
+            echo -n "Максимум попыток (рекомендуется 3-6): "
+            read MAX_TRIES
             set_ssh_param "MaxAuthTries" "$MAX_TRIES" "$CONFIG_FILE"
             print_success "MaxAuthTries установлен на $MAX_TRIES"
             restart_ssh
             ;;
         4)
-            read -p "Максимум сессий (рекомендуется 5-10): " MAX_SESSIONS
+            echo -n "Максимум сессий (рекомендуется 5-10): "
+            read MAX_SESSIONS
             set_ssh_param "MaxSessions" "$MAX_SESSIONS" "$CONFIG_FILE"
             print_success "MaxSessions установлен на $MAX_SESSIONS"
             restart_ssh
             ;;
         5)
-            read -p "Интервал проверки в секундах (300 = 5 минут): " CLIENT_ALIVE
+            echo -n "Интервал проверки в секундах (300 = 5 минут): "
+            read CLIENT_ALIVE
             set_ssh_param "ClientAliveInterval" "$CLIENT_ALIVE" "$CONFIG_FILE"
             set_ssh_param "ClientAliveCountMax" "3" "$CONFIG_FILE"
             print_success "Таймауты настроены"
@@ -290,9 +293,6 @@ security_settings() {
             set_ssh_param "ClientAliveCountMax" "3" "$CONFIG_FILE"
             set_ssh_param "PermitEmptyPasswords" "no" "$CONFIG_FILE"
             set_ssh_param "ChallengeResponseAuthentication" "no" "$CONFIG_FILE"
-            set_ssh_param "PrintLastLog" "yes" "$CONFIG_FILE"
-            set_ssh_param "IgnoreRhosts" "yes" "$CONFIG_FILE"
-            set_ssh_param "StrictModes" "yes" "$CONFIG_FILE"
             print_success "Все настройки безопасности применены"
             restart_ssh
             ;;
@@ -300,7 +300,6 @@ security_settings() {
         *) print_error "Неверный выбор" ;;
     esac
     
-    # Проверка конфигурации
     if test_ssh_config; then
         print_success "Конфигурация валидна"
     else
@@ -310,7 +309,8 @@ security_settings() {
     fi
     
     echo ""
-    read -p "Нажмите Enter для продолжения..."
+    echo -n "Нажмите Enter для продолжения..."
+    read
     show_main_menu
 }
 
@@ -324,11 +324,12 @@ change_port() {
     local current_port=$(grep -E "^Port" "$CONFIG_FILE" | awk '{print $2}')
     [ -z "$current_port" ] && current_port=22
     
-    echo -e "${CYAN}Текущий порт:${NC} $current_port"
+    echo "Текущий порт: $current_port"
     echo ""
     
     while true; do
-        read -p "$(echo -e ${YELLOW}🟢 Введите новый порт [1024-65535]:${NC} )" NEW_PORT
+        echo -n -e "${YELLOW}🟢 Введите новый порт [1024-65535]: ${NC}"
+        read NEW_PORT
         
         if [[ "$NEW_PORT" =~ ^[0-9]+$ ]] && [ "$NEW_PORT" -ge 1024 ] && [ "$NEW_PORT" -le 65535 ]; then
             break
@@ -339,31 +340,30 @@ change_port() {
     
     local backup_file=$(create_backup)
     
-    # Меняем порт
     if grep -q "^Port" "$CONFIG_FILE"; then
         sed -i "s/^Port .*/Port $NEW_PORT/" "$CONFIG_FILE"
     else
         echo "Port $NEW_PORT" >> "$CONFIG_FILE"
     fi
     
-    # Настройка фаерволла
     echo ""
-    read -p "$(echo -e ${YELLOW}Автоматически настроить UFW? (y/n):${NC} )" DO_UFW
+    echo -n -e "${YELLOW}Автоматически настроить UFW? (y/n): ${NC}"
+    read DO_UFW
     if [ "$DO_UFW" = "y" ]; then
         configure_ufw "$NEW_PORT"
-        read -p "Закрыть старый порт $current_port? (y/n): " CLOSE_OLD
+        echo -n "Закрыть старый порт $current_port? (y/n): "
+        read CLOSE_OLD
         if [ "$CLOSE_OLD" = "y" ] && [ "$current_port" != "22" ]; then
             ufw delete allow "$current_port"/tcp 2>/dev/null
             print_success "Порт $current_port закрыт"
         fi
     fi
     
-    # Проверка
     if test_ssh_config; then
         restart_ssh
         print_success "Порт изменён на $NEW_PORT"
         print_warning "НЕ ЗАКРЫВАЙТЕ ЭТУ СЕССИЮ!"
-        print_highlight "Проверьте новое подключение: ssh -p $NEW_PORT root@$(hostname -I | awk '{print $1}')"
+        echo "Проверьте новое подключение: ssh -p $NEW_PORT root@$(hostname -I | awk '{print $1}')"
     else
         print_error "Ошибка! Восстанавливаем..."
         mv "$backup_file" "$CONFIG_FILE"
@@ -371,7 +371,8 @@ change_port() {
     fi
     
     echo ""
-    read -p "После успешной проверки нажмите Enter..."
+    echo -n "После успешной проверки нажмите Enter..."
+    read
     show_main_menu
 }
 
@@ -383,7 +384,8 @@ full_setup() {
     print_header "ПОЛНАЯ НАСТРОЙКА SSH"
     print_warning "Будет выполнена полная настройка безопасности"
     
-    read -p "Продолжить? (yes/no): " CONFIRM
+    echo -n "Продолжить? (yes/no): "
+    read CONFIRM
     if [ "$CONFIRM" != "yes" ]; then
         show_main_menu
         return
@@ -391,7 +393,6 @@ full_setup() {
     
     local backup_file=$(create_backup)
     
-    # 1. Ключи
     print_info "1/4: Установка ключей..."
     mkdir -p /root/.ssh
     curl -s https://github.com/mrpltrans.keys > /root/.ssh/authorized_keys
@@ -399,7 +400,6 @@ full_setup() {
     chmod 600 /root/.ssh/authorized_keys
     print_success "Ключи установлены"
     
-    # 2. Безопасность
     print_info "2/4: Настройка безопасности..."
     set_ssh_param "PasswordAuthentication" "no" "$CONFIG_FILE"
     set_ssh_param "PermitRootLogin" "prohibit-password" "$CONFIG_FILE"
@@ -408,16 +408,20 @@ full_setup() {
     set_ssh_param "ClientAliveInterval" "300" "$CONFIG_FILE"
     set_ssh_param "PermitEmptyPasswords" "no" "$CONFIG_FILE"
     set_ssh_param "PubkeyAuthentication" "yes" "$CONFIG_FILE"
+    set_ssh_param "ChallengeResponseAuthentication" "no" "$CONFIG_FILE"
     print_success "Безопасность настроена"
     
-    # 3. Порт (опционально)
     print_info "3/4: Настройка порта..."
-    read -p "Сменить SSH порт? (y/n): " CHANGE_PORT
-    if [ "$CHANGE_PORT" = "y" ]; then
+    echo -n "Сменить SSH порт? (y/n): "
+    read CHANGE_PORT_OPT
+    if [ "$CHANGE_PORT_OPT" = "y" ]; then
         while true; do
-            read -p "Введите новый порт: " NEW_PORT
+            echo -n "Введите новый порт: "
+            read NEW_PORT
             if [[ "$NEW_PORT" =~ ^[0-9]+$ ]] && [ "$NEW_PORT" -ge 1024 ] && [ "$NEW_PORT" -le 65535 ]; then
                 break
+            else
+                print_error "Порт должен быть от 1024 до 65535"
             fi
         done
         set_ssh_param "Port" "$NEW_PORT" "$CONFIG_FILE"
@@ -427,7 +431,6 @@ full_setup() {
         FINAL_PORT=22
     fi
     
-    # 4. Применение
     print_info "4/4: Применение настроек..."
     if test_ssh_config; then
         restart_ssh
@@ -439,30 +442,30 @@ full_setup() {
         exit 1
     fi
     
-    # Финальный вывод
     clear
     print_header "НАСТРОЙКА ЗАВЕРШЕНА"
     echo ""
-    echo -e "${GREEN}  ✅ SSH настроен максимально безопасно!${NC}"
+    echo "✅ SSH настроен максимально безопасно!"
     echo ""
-    echo -e "${CYAN}📋 Итоговые настройки:${NC}"
-    echo -e "  • SSH порт: ${WHITE}$FINAL_PORT${NC}"
-    echo -e "  • Пароли: ${RED}ОТКЛЮЧЕНЫ${NC}"
-    echo -e "  • Ключи: ${GREEN}ВКЛЮЧЕНЫ${NC}"
+    echo "📋 Итоговые настройки:"
+    echo "  • SSH порт: $FINAL_PORT"
+    echo "  • Пароли: ОТКЛЮЧЕНЫ"
+    echo "  • Ключи: ВКЛЮЧЕНЫ"
     echo ""
-    echo -e "${CYAN}🔑 Ваши ключи:${NC}"
+    echo "🔑 Ваши ключи:"
     cat /root/.ssh/authorized_keys
     echo ""
-    echo -e "${CYAN}📝 Подключение:${NC}"
+    echo "📝 Подключение:"
     if [ "$FINAL_PORT" = "22" ]; then
-        echo -e "  ssh root@$(hostname -I | awk '{print $1}')"
+        echo "  ssh root@$(hostname -I | awk '{print $1}')"
     else
-        echo -e "  ssh -p $FINAL_PORT root@$(hostname -I | awk '{print $1}')"
+        echo "  ssh -p $FINAL_PORT root@$(hostname -I | awk '{print $1}')"
     fi
     echo ""
-    echo -e "${RED}⚠️  КРИТИЧНО: НЕ ЗАКРЫВАЙТЕ ЭТУ СЕССИЮ, пока не проверите новое подключение!${NC}"
+    echo -e "${RED}⚠️ КРИТИЧНО: НЕ ЗАКРЫВАЙТЕ ЭТУ СЕССИЮ, пока не проверите новое подключение!${NC}"
     echo ""
-    read -p "Нажмите Enter для продолжения..."
+    echo -n "Нажмите Enter для продолжения..."
+    read
     show_main_menu
 }
 
@@ -475,16 +478,18 @@ restore_backup() {
     
     if [ ! -d "$BACKUP_DIR" ]; then
         print_error "Бэкапы не найдены"
-        read -p "Нажмите Enter..."
+        echo -n "Нажмите Enter..."
+        read
         show_main_menu
         return
     fi
     
-    echo -e "${CYAN}Доступные бэкапы:${NC}"
+    echo "Доступные бэкапы:"
     ls -lh "$BACKUP_DIR" | tail -n +2
     
     echo ""
-    read -p "Введите имя файла для восстановления: " BACKUP_FILE
+    echo -n "Введите имя файла для восстановления: "
+    read BACKUP_FILE
     
     if [ -f "$BACKUP_DIR/$BACKUP_FILE" ]; then
         cp "$BACKUP_DIR/$BACKUP_FILE" "$CONFIG_FILE"
@@ -494,7 +499,8 @@ restore_backup() {
         print_error "Файл не найден"
     fi
     
-    read -p "Нажмите Enter..."
+    echo -n "Нажмите Enter..."
+    read
     show_main_menu
 }
 
@@ -505,12 +511,12 @@ restore_backup() {
 show_config() {
     print_header "ТЕКУЩАЯ КОНФИГУРАЦИЯ SSH"
     
-    echo -e "${CYAN}Активные настройки:${NC}"
+    echo "Активные настройки:"
     echo ""
-    grep -E "^(Port|PermitRootLogin|PasswordAuthentication|PubkeyAuthentication|MaxAuthTries|MaxSessions|ClientAliveInterval)" "$CONFIG_FILE" | grep -v "^#" || echo "Стандартные настройки"
+    grep -E "^(Port|PermitRootLogin|PasswordAuthentication|PubkeyAuthentication)" "$CONFIG_FILE" | grep -v "^#" || echo "Стандартные настройки"
     echo ""
     
-    echo -e "${CYAN}Установленные ключи:${NC}"
+    echo "Установленные ключи:"
     if [ -f /root/.ssh/authorized_keys ]; then
         cat /root/.ssh/authorized_keys
     else
@@ -518,7 +524,8 @@ show_config() {
     fi
     echo ""
     
-    read -p "Нажмите Enter..."
+    echo -n "Нажмите Enter..."
+    read
     show_main_menu
 }
 
@@ -530,13 +537,13 @@ advanced_settings() {
     print_header "ДОПОЛНИТЕЛЬНЫЕ НАСТРОЙКИ"
     
     echo ""
-    echo -e "  ${GREEN}1)${NC} Установка и настройка Fail2ban"
-    echo -e "  ${GREEN}2)${NC} Настройка SSH баннера (предупреждение)"
-    echo -e "  ${GREEN}3)${NC} Ограничение пользователей (AllowUsers/DenyUsers)"
-    echo -e "  ${GREEN}4)${NC} Настройка TCP Wrappers"
-    echo -e "  ${GREEN}5)${NC} Назад"
+    echo "  1) Установка и настройка Fail2ban"
+    echo "  2) Настройка SSH баннера"
+    echo "  3) Ограничение пользователей (AllowUsers)"
+    echo "  4) Назад"
     echo ""
-    read -p "$(echo -e ${YELLOW}👉 Выберите действие [1-5]:${NC} )" ADV_ACTION
+    echo -n -e "${YELLOW}👉 Выберите действие [1-4]: ${NC}"
+    read ADV_ACTION
     
     case $ADV_ACTION in
         1)
@@ -550,9 +557,8 @@ maxretry = 3
 
 [sshd]
 enabled = true
-port = $(grep -E "^Port" "$CONFIG_FILE" | awk '{print $2}' || echo "22")
+port = ssh
 logpath = %(sshd_log)s
-backend = %(sshd_backend)s
 EOF
             systemctl restart fail2ban
             print_success "Fail2ban установлен и настроен"
@@ -571,22 +577,18 @@ EOF
             ;;
         3)
             print_info "Ограничение пользователей..."
-            read -p "Разрешить только конкретных пользователей (через пробел): " ALLOW_USERS
+            echo -n "Разрешить только конкретных пользователей (через пробел): "
+            read ALLOW_USERS
             set_ssh_param "AllowUsers" "$ALLOW_USERS" "$CONFIG_FILE"
             restart_ssh
             print_success "Доступ разрешён только для: $ALLOW_USERS"
             ;;
-        4)
-            print_info "TCP Wrappers..."
-            echo "sshd: ALL" >> /etc/hosts.deny
-            echo "sshd: $(hostname -I | awk '{print $1}')" >> /etc/hosts.allow
-            print_success "TCP Wrappers настроены"
-            ;;
-        5) show_main_menu ;;
+        4) show_main_menu ;;
         *) print_error "Неверный выбор" ;;
     esac
     
-    read -p "Нажмите Enter..."
+    echo -n "Нажмите Enter..."
+    read
     show_main_menu
 }
 
