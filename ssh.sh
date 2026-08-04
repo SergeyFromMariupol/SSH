@@ -27,7 +27,7 @@ echo "=== НАСТРОЙКА КЛЮЧЕЙ И БЕЗОПАСНОСТИ ==="
 
 # Подменю ключей
 echo ""
-echo "1) Скачать с GitHub (@mrpltrans)"
+echo "1) Скачать с GitHub (@SergeyFromMariupol)"
 echo "2) Вставить публичный ключ вручную"
 echo "3) Пропустить"
 echo ""
@@ -38,7 +38,7 @@ case $KEY_OPT in
         echo ""
         echo "Скачиваем ключи с GitHub..."
         mkdir -p /root/.ssh
-        curl -s https://github.com/mrpltrans.keys > /root/.ssh/authorized_keys
+        curl -s https://github.com/SergeyFromMariupol.keys > /root/.ssh/authorized_keys
         chmod 700 /root/.ssh
         chmod 600 /root/.ssh/authorized_keys
         echo -e "${GREEN}✅ Ключи загружены${NC}"
