@@ -124,7 +124,7 @@ delete_key() {
     fi
 
     show_keys 1
-    read -r -p "Номер ключа для удаления: " selected
+    read -r -p "Номер ключа для удаления: " selected </dev/tty
     if [[ ! "$selected" =~ ^[0-9]+$ ]] || \
        [ "$selected" -lt 1 ] || [ "$selected" -gt "${#keys[@]}" ]; then
         echo -e "${RED}Некорректный номер ключа.${NC}"
@@ -134,7 +134,7 @@ delete_key() {
     if [ "${#keys[@]}" -eq 1 ]; then
         echo -e "${RED}ВНИМАНИЕ: это последний SSH-ключ.${NC}"
         echo -e "${RED}После закрытия текущей сессии новый вход на сервер может стать невозможен.${NC}"
-        read -r -p "Для удаления последнего ключа введите УДАЛИТЬ: " confirmation
+        read -r -p "Для удаления последнего ключа введите УДАЛИТЬ: " confirmation </dev/tty
         if [ "$confirmation" != "УДАЛИТЬ" ]; then
             echo -e "${YELLOW}Удаление отменено.${NC}"
             return
@@ -163,7 +163,7 @@ echo "2) Добавить ключ с паролем — $(key_status "$KEY_PASS
 echo "3) Удалить ключ"
 echo "4) Выйти"
 echo ""
-read -r -p "Выберите [1-4]: " KEY_OPT
+read -r -p "Выберите [1-4]: " KEY_OPT </dev/tty
 
 case $KEY_OPT in
     1)
