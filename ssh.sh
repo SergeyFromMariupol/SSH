@@ -10,12 +10,6 @@ YELLOW='\033[1;33m'
 CYAN='\033[0;36m'
 NC='\033[0m'
 
-clear
-echo ""
-echo "========================================="
-echo "     SSH HARDENING SCRIPT"
-echo "========================================="
-
 # Проверка root
 if [ "$EUID" -ne 0 ]; then 
     echo -e "${RED}Запустите от root: sudo bash $0${NC}"
