@@ -44,44 +44,22 @@ save_keys() {
 
 # Подменю ключей
 echo ""
-echo "1) Скачать с GitHub (@SergeyFromMariupol)"
-echo "2) Установить ключ без пароля"
-echo "3) Установить ключ с паролем"
-echo "4) Установить оба ключа"
-echo "5) Вставить публичный ключ вручную"
-echo "6) Пропустить"
+echo "1) Установить ключ без пароля"
+echo "2) Установить ключ с паролем"
+echo "3) Вставить публичный ключ вручную"
 echo ""
-read -r -p "Выберите [1-6]: " KEY_OPT
+read -r -p "Выберите [1-3]: " KEY_OPT
 
 case $KEY_OPT in
     1)
-        echo ""
-        echo "Скачиваем ключи с GitHub..."
-        GITHUB_KEYS=$(curl -fsS https://github.com/SergeyFromMariupol.keys) || {
-            echo -e "${RED}Не удалось скачать ключи с GitHub.${NC}"
-            exit 1
-        }
-        if [ -z "$GITHUB_KEYS" ]; then
-            echo -e "${RED}GitHub вернул пустой список ключей.${NC}"
-            exit 1
-        fi
-        save_keys "$GITHUB_KEYS"
-        echo -e "${GREEN}✅ Ключи загружены${NC}"
-        ;;
-    2)
         save_keys "$KEY_PASSWORD_NO"
         echo -e "${GREEN}✅ Установлен ключ без пароля${NC}"
         ;;
-    3)
+    2)
         save_keys "$KEY_PASSWORD_YES"
         echo -e "${GREEN}✅ Установлен ключ с паролем${NC}"
         ;;
-    4)
-        save_keys "${KEY_PASSWORD_NO}
-${KEY_PASSWORD_YES}"
-        echo -e "${GREEN}✅ Установлены оба ключа${NC}"
-        ;;
-    5)
+    3)
         echo ""
         echo "Вставьте публичный SSH ключ:"
         read -r USER_KEY
@@ -95,10 +73,6 @@ ${KEY_PASSWORD_YES}"
         save_keys "$USER_KEY"
         echo -e "${GREEN}✅ Ключ сохранён${NC}"
         ;;
-    6)
-        echo ""
-        echo -e "${YELLOW}⏭️ Пропускаем установку ключей${NC}"
-        ;;
     *)
         echo -e "${RED}Некорректный выбор.${NC}"
         exit 1
@@ -106,7 +80,7 @@ ${KEY_PASSWORD_YES}"
 esac
 
 # Показываем ключи если есть
-if [ -s /root/.ssh/authorized_keys ] && [ "$KEY_OPT" != "6" ]; then
+if [ -s /root/.ssh/authorized_keys ]; then
     echo ""
     echo -e "${GREEN}Установленные ключи:${NC}"
     echo "────────────────────────────────────────"
