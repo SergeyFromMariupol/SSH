@@ -75,6 +75,7 @@ add_key() {
 }
 
 show_keys() {
+    local numbered="${1:-0}"
     local number=0
     local line fingerprint comment
 
@@ -87,7 +88,11 @@ show_keys() {
         fingerprint=$(printf '%s\n' "$line" | ssh-keygen -lf - 2>/dev/null | awk '{print $2}')
         comment=$(printf '%s\n' "$line" | cut -d' ' -f3-)
         [ "$comment" != "$line" ] || comment='без комментария'
-        printf '%d) %s — %s\n' "$number" "${fingerprint:-неизвестный fingerprint}" "$comment"
+        if [ "$numbered" -eq 1 ]; then
+            printf '%d) %s — %s\n' "$number" "${fingerprint:-неизвестный fingerprint}" "$comment"
+        else
+            printf '• %s — %s\n' "${fingerprint:-неизвестный fingerprint}" "$comment"
+        fi
     done < "$AUTHORIZED_KEYS"
     if [ "$number" -eq 0 ]; then
         echo "Ключей нет."
@@ -125,7 +130,7 @@ delete_key() {
         exit 1
     fi
 
-    show_keys
+    show_keys 1
     read -r -p "Номер ключа для удаления: " selected
     if [[ ! "$selected" =~ ^[0-9]+$ ]] || \
        [ "$selected" -lt 1 ] || [ "$selected" -gt "${#keys[@]}" ]; then
