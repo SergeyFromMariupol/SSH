@@ -102,14 +102,13 @@ show_keys() {
 
 key_status() {
     local key="$1"
-    local key_type key_data fingerprint
+    local key_type key_data
 
     key_type=$(printf '%s\n' "$key" | awk '{print $1}')
     key_data=$(printf '%s\n' "$key" | awk '{print $2}')
     if awk -v type="$key_type" -v data="$key_data" \
         '$1 == type && $2 == data { found=1 } END { exit !found }' "$AUTHORIZED_KEYS"; then
-        fingerprint=$(printf '%s\n' "$key" | ssh-keygen -lf - 2>/dev/null | awk '{print $2}')
-        printf 'установлен: %s' "${fingerprint:-fingerprint неизвестен}"
+        printf 'установлен'
     else
         printf 'не установлен'
     fi
