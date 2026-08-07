@@ -45,8 +45,8 @@ save_keys() {
 # Подменю ключей
 echo ""
 echo "1) Скачать с GitHub (@SergeyFromMariupol)"
-echo "2) Установить ключ без пароля (Password_NO, SHA256:k34c6+DC...)"
-echo "3) Установить ключ с паролем (Password_YES, SHA256:9FZgNC+Z...)"
+echo "2) Установить ключ без пароля"
+echo "3) Установить ключ с паролем"
 echo "4) Установить оба ключа"
 echo "5) Вставить публичный ключ вручную"
 echo "6) Пропустить"
@@ -70,11 +70,11 @@ case $KEY_OPT in
         ;;
     2)
         save_keys "$KEY_PASSWORD_NO"
-        echo -e "${GREEN}✅ Установлен ключ Password_NO${NC}"
+        echo -e "${GREEN}✅ Установлен ключ без пароля${NC}"
         ;;
     3)
         save_keys "$KEY_PASSWORD_YES"
-        echo -e "${GREEN}✅ Установлен ключ Password_YES${NC}"
+        echo -e "${GREEN}✅ Установлен ключ с паролем${NC}"
         ;;
     4)
         save_keys "${KEY_PASSWORD_NO}
