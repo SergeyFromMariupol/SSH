@@ -175,7 +175,10 @@ case $KEY_OPT in
         ;;
     3)
         echo ""
-        echo "Вставьте публичный SSH ключ:"
+        echo "Вставьте публичный SSH-ключ одной строкой."
+        echo "Пример: ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAA... user@computer"
+        echo ""
+        echo "Публичный ключ:"
         read -r USER_KEY
         add_key "$USER_KEY"
         ;;
