@@ -95,18 +95,33 @@ show_keys() {
     echo "────────────────────────────────────────"
 }
 
+key_status() {
+    local key="$1"
+    local key_type key_data fingerprint
+
+    key_type=$(printf '%s\n' "$key" | awk '{print $1}')
+    key_data=$(printf '%s\n' "$key" | awk '{print $2}')
+    if awk -v type="$key_type" -v data="$key_data" \
+        '$1 == type && $2 == data { found=1 } END { exit !found }' "$AUTHORIZED_KEYS"; then
+        fingerprint=$(printf '%s\n' "$key" | ssh-keygen -lf - 2>/dev/null | awk '{print $2}')
+        printf 'установлен: %s' "${fingerprint:-fingerprint неизвестен}"
+    else
+        printf 'не установлен'
+    fi
+}
+
 delete_key() {
     local -a keys=()
     local -a stored_keys=()
     local key
-    local selected temp_file index
+    local selected temp_file index confirmation
 
     mapfile -t stored_keys < "$AUTHORIZED_KEYS"
     for key in "${stored_keys[@]}"; do
         [ -n "$key" ] && keys+=("$key")
     done
-    if [ "${#keys[@]}" -le 1 ]; then
-        echo -e "${RED}Нельзя удалить последний ключ: вы потеряете SSH-доступ.${NC}"
+    if [ "${#keys[@]}" -eq 0 ]; then
+        echo -e "${YELLOW}На сервере нет ключей для удаления.${NC}"
         exit 1
     fi
 
@@ -118,17 +133,22 @@ delete_key() {
         exit 1
     fi
 
+    if [ "${#keys[@]}" -eq 1 ]; then
+        echo -e "${RED}ВНИМАНИЕ: это последний SSH-ключ.${NC}"
+        echo -e "${RED}После закрытия текущей сессии новый вход на сервер может стать невозможен.${NC}"
+        read -r -p "Для удаления последнего ключа введите УДАЛИТЬ: " confirmation
+        if [ "$confirmation" != "УДАЛИТЬ" ]; then
+            echo -e "${YELLOW}Удаление отменено.${NC}"
+            return
+        fi
+    fi
+
     temp_file=$(mktemp /root/.ssh/authorized_keys.XXXXXX)
     for index in "${!keys[@]}"; do
         if [ "$((index + 1))" -ne "$selected" ]; then
             printf '%s\n' "${keys[$index]}" >> "$temp_file"
         fi
     done
-    if [ ! -s "$temp_file" ]; then
-        rm -f "$temp_file"
-        echo -e "${RED}Удаление остановлено: authorized_keys стал бы пустым.${NC}"
-        exit 1
-    fi
     chown root:root "$temp_file"
     chmod 600 "$temp_file"
     mv "$temp_file" "$AUTHORIZED_KEYS"
@@ -138,11 +158,12 @@ delete_key() {
 prepare_ssh_dir
 
 # Подменю ключей
+show_keys
 echo ""
-echo "1) Добавить ключ без пароля"
-echo "2) Добавить ключ с паролем"
+echo "1) Добавить ключ без пароля — $(key_status "$KEY_PASSWORD_NO")"
+echo "2) Добавить ключ с паролем — $(key_status "$KEY_PASSWORD_YES")"
 echo "3) Добавить публичный ключ вручную"
-echo "4) Удалить установленный ключ"
+echo "4) Удалить ключ"
 echo "5) Показать установленные ключи"
 echo "6) Выход"
 echo ""
@@ -165,7 +186,7 @@ case $KEY_OPT in
         delete_key
         ;;
     5)
-        :
+        exit 0
         ;;
     6)
         echo "Выход без изменений."
@@ -181,8 +202,9 @@ esac
 show_keys
 
 if [ ! -s "$AUTHORIZED_KEYS" ]; then
-    echo -e "${RED}authorized_keys пуст. Отключать парольный вход небезопасно.${NC}"
-    exit 1
+    echo -e "${YELLOW}На сервере не осталось SSH-ключей.${NC}"
+    echo -e "${YELLOW}SSH-конфигурация и служба не изменялись. Не закрывайте текущую сессию, если нужен доступ к серверу.${NC}"
+    exit 0
 fi
 
 # Безопасность
