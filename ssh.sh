@@ -164,10 +164,9 @@ echo "1) Добавить ключ без пароля — $(key_status "$KEY_PA
 echo "2) Добавить ключ с паролем — $(key_status "$KEY_PASSWORD_YES")"
 echo "3) Добавить публичный ключ вручную"
 echo "4) Удалить ключ"
-echo "5) Показать установленные ключи"
-echo "6) Выход"
+echo "5) Выход"
 echo ""
-read -r -p "Выберите [1-6]: " KEY_OPT
+read -r -p "Выберите [1-5]: " KEY_OPT
 
 case $KEY_OPT in
     1)
@@ -186,9 +185,6 @@ case $KEY_OPT in
         delete_key
         ;;
     5)
-        exit 0
-        ;;
-    6)
         echo "Выход без изменений."
         exit 0
         ;;
