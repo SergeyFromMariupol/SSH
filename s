@@ -19,10 +19,8 @@ fi
 echo ""
 echo "=== НАСТРОЙКА КЛЮЧЕЙ И БЕЗОПАСНОСТИ ==="
 
-# Публичные ключи. Пароль защищает приватный файл на компьютере владельца;
-# на сервер устанавливается только соответствующая публичная часть.
-KEY_PASSWORD_NO='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIqGn4hzxZLqi/J2B8b+JRqGGuJeKP7vcEImKJDonCGN SERHII HRYSHYN'
-KEY_PASSWORD_YES='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIDQgJqQX0gbt56vHK7kzfvS5Aa5YxVvp+1dLs2s1kd6/ SERHII HRYSHYN'
+# Публичный SSH-ключ владельца.
+PUBLIC_KEY='ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIIqGn4hzxZLqi/J2B8b+JRqGGuJeKP7vcEImKJDonCGN SERHII HRYSHYN'
 AUTHORIZED_KEYS='/root/.ssh/authorized_keys'
 
 prepare_ssh_dir() {
@@ -69,7 +67,6 @@ add_key() {
 }
 
 show_keys() {
-    local numbered="${1:-0}"
     local number=0
     local line fingerprint comment
 
@@ -82,11 +79,7 @@ show_keys() {
         fingerprint=$(printf '%s\n' "$line" | ssh-keygen -lf - 2>/dev/null | awk '{print $2}')
         comment=$(printf '%s\n' "$line" | cut -d' ' -f3-)
         [ "$comment" != "$line" ] || comment='без комментария'
-        if [ "$numbered" -eq 1 ]; then
-            printf '%d) %s — %s\n' "$number" "${fingerprint:-неизвестный fingerprint}" "$comment"
-        else
-            printf '• %s — %s\n' "${fingerprint:-неизвестный fingerprint}" "$comment"
-        fi
+        printf '• %s — %s\n' "${fingerprint:-неизвестный fingerprint}" "$comment"
     done < "$AUTHORIZED_KEYS"
     if [ "$number" -eq 0 ]; then
         echo "Ключей нет."
@@ -94,96 +87,8 @@ show_keys() {
     echo "────────────────────────────────────────"
 }
 
-key_status() {
-    local key="$1"
-    local key_type key_data
-
-    key_type=$(printf '%s\n' "$key" | awk '{print $1}')
-    key_data=$(printf '%s\n' "$key" | awk '{print $2}')
-    if awk -v type="$key_type" -v data="$key_data" \
-        '$1 == type && $2 == data { found=1 } END { exit !found }' "$AUTHORIZED_KEYS"; then
-        printf 'установлен'
-    else
-        printf 'не установлен'
-    fi
-}
-
-delete_key() {
-    local -a keys=()
-    local -a stored_keys=()
-    local key
-    local selected temp_file index confirmation
-
-    mapfile -t stored_keys < "$AUTHORIZED_KEYS"
-    for key in "${stored_keys[@]}"; do
-        [ -n "$key" ] && keys+=("$key")
-    done
-    if [ "${#keys[@]}" -eq 0 ]; then
-        echo -e "${YELLOW}На сервере нет ключей для удаления.${NC}"
-        exit 1
-    fi
-
-    show_keys 1
-    read -r -p "Номер ключа для удаления: " selected </dev/tty
-    if [[ ! "$selected" =~ ^[0-9]+$ ]] || \
-       [ "$selected" -lt 1 ] || [ "$selected" -gt "${#keys[@]}" ]; then
-        echo -e "${RED}Некорректный номер ключа.${NC}"
-        exit 1
-    fi
-
-    if [ "${#keys[@]}" -eq 1 ]; then
-        echo -e "${RED}ВНИМАНИЕ: это последний SSH-ключ.${NC}"
-        echo -e "${RED}После закрытия текущей сессии новый вход на сервер может стать невозможен.${NC}"
-        read -r -p "Для удаления последнего ключа введите УДАЛИТЬ: " confirmation </dev/tty
-        if [ "$confirmation" != "УДАЛИТЬ" ]; then
-            echo -e "${YELLOW}Удаление отменено.${NC}"
-            return
-        fi
-    fi
-
-    temp_file=$(mktemp /root/.ssh/authorized_keys.XXXXXX)
-    for index in "${!keys[@]}"; do
-        if [ "$((index + 1))" -ne "$selected" ]; then
-            printf '%s\n' "${keys[$index]}" >> "$temp_file"
-        fi
-    done
-    chown root:root "$temp_file"
-    chmod 600 "$temp_file"
-    mv "$temp_file" "$AUTHORIZED_KEYS"
-    echo -e "${GREEN}✅ Ключ удалён. Не закрывайте текущую сессию до проверки нового входа.${NC}"
-}
-
 prepare_ssh_dir
-
-# Подменю ключей
-show_keys
-echo ""
-echo "1) Добавить ключ без пароля — $(key_status "$KEY_PASSWORD_NO")"
-echo "2) Добавить ключ с паролем — $(key_status "$KEY_PASSWORD_YES")"
-echo "3) Удалить ключ"
-echo "4) Выйти"
-echo ""
-read -r -p "Выберите [1-4]: " KEY_OPT </dev/tty
-
-case $KEY_OPT in
-    1)
-        add_key "$KEY_PASSWORD_NO"
-        ;;
-    2)
-        add_key "$KEY_PASSWORD_YES"
-        ;;
-    3)
-        delete_key
-        ;;
-    4)
-        echo "Выход без изменений."
-        exit 0
-        ;;
-    *)
-        echo -e "${RED}Некорректный выбор.${NC}"
-        exit 1
-        ;;
-esac
+add_key "$PUBLIC_KEY"
 
 # Показываем ключи после изменения
 show_keys
